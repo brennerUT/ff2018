@@ -1,0 +1,7 @@
+- Instead of scraping, download projections from FFAnalytics while leaving out one source at a time and then back-calulating each source's projections; also for FantasyPros projections
+- Different VOR calculation method?
+- Include PickingPros and other new sources; STATS.com via FantasyPros; sources I used last year; sources from FFAnalytics and FantasyPros from '17 & '18; include BeerSheets like last year?
+- Choose how many players to include based on ESPN projections? What to do about Beersheets then . . .
+- Try kernel ridge, Bayesian Ridge, elastic net, and/or neural net/deep learning
+- log transform data to linearize it?
+- 

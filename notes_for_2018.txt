@@ -1,0 +1,18 @@
+- ESPN cheatsheet = 40 QBs, 35 TEs, 85 RBs, 90 WRs, 15 DSTs
+	- Beersheets uses 32 QBs, 78 RBs, 78 WRs, 25 TEs, 15 DSTs
+- Try kernel ridge, Bayesian Ridge, elastic net, multitask elastic net, and MLPRegressor
+
+- CBS
+- ESPN
+- FFToday
+- Yahoo
+- FantasySharks
+- NumberFire
+- NFL.com
+- WalterFootball
+- FantasyData
+- EDS Football
+
+- PickingPros
+- Scout (WayBack Machine)
+- BeerSheets (14 team, snake values)

@@ -1,0 +1,21 @@
+https://ffashiny.shinyapps.io/webapp/__sockjs__/t=d874a3f3dabda92caa7fa66c6d3e1469/w=8fba94da/s=0/353/30xyie70/xhr_send
+
+{'0':'0|m|{"method":"update","data":{"selectedType":"average"}}'}
+{'0':'0|m|{"method":"update","data":{"selectedSeason":"2017"}}'}
+{'0':'0|m|{"method":"update","data":{"selectedAnalysts":["18",...]}}'}
+
+CBS =  -1
+yahoo = 3
+espn = 4
+nfl.com = 5
+FFToday = 7
+fantasyPros = 9
+fantasySharks = 18
+fantasyData = 28
+
+
+save
+{'
+
+download 
+{'
