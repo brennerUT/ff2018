@@ -2,10 +2,10 @@
 	- Beersheets uses 32 QBs, 78 RBs, 78 WRs, 25 TEs, 15 DSTs
 - Try kernel ridge, Bayesian Ridge, elastic net, multitask elastic net, and MLPRegressor
 
+To do:
 - CBS
-- ESPN
+- Scout (WayBack Machine)
 - FFToday
-- Yahoo
 - FantasySharks
 - NumberFire
 - NFL.com
@@ -13,6 +13,8 @@
 - FantasyData
 - EDS Football
 
+Done:
 - PickingPros
-- Scout (WayBack Machine)
+- ESPN
 - BeerSheets (14 team, snake values)
+- Yahoo
