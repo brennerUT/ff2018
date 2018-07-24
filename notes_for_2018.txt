@@ -3,7 +3,6 @@
 - Try kernel ridge, Bayesian Ridge, elastic net, multitask elastic net, and MLPRegressor
 
 To do:
-- CBS
 - Scout (WayBack Machine)
 - FFToday
 - FantasySharks
@@ -12,9 +11,11 @@ To do:
 - WalterFootball
 - FantasyData
 - EDS Football
+- RTSports
 
 Done:
 - PickingPros
 - ESPN
 - BeerSheets (14 team, snake values)
 - Yahoo
+- CBS

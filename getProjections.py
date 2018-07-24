@@ -4,12 +4,133 @@ import pickle
 import datetime
 import string
 import requests
+import certifi
 #import other functions of mine
 
 ##inputs example
 directory='C:/Users/ericb/Desktop/ff2018/'#projections directory
 ppr=0.5
-season='2018'
+season='2017'
+
+#def scoutProjections(directory,season,ppr=0.0):
+source='scout'
+##Scrape and pickle
+if season != str(datetime.datetime.now().year) and os.path.exists(directory+source+season+'.p'):
+    pgDic=pickle.load(open(directory+source+season+'.p',"rb"))
+elif season == '2017':
+    pgDic={}
+    pgDic['QB']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=qb')[2]
+    pgDic['RB_0ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=rb&noppr=true')[2]
+    pgDic['RB_1ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=rb')[2]
+    pgDic['WR_0ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=wr&noppr=true')[2]
+    pgDic['WR_1ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=wr')[2]
+    pgDic['TE_0ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=te&noppr=true')[2]
+    pgDic['TE_1ppr']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=te')[2]
+    pgDic['DST']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=def')[2]
+    pgDic['K']=pd.read_html('https://web.archive.org/web/20170829020101/http://fftoolbox.scout.com:80/football/rankings/index.php?pos=k')[2]
+    pickle.dump(pgDic,open(directory+source+season+'.p','wb'))
+else:            
+    cert=requests.get('https://certs.godaddy.com/repository/gdig2.crt.pem').text
+    with open(certifi.where(),'r+') as f:
+        if cert not in f.read():
+            f.write('\n'+cert)
+    pgDic={}
+    pgDic['QB']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=qb')[2]  
+    pgDic['RB_0ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=rb&noppr=true')[2]
+    pgDic['RB_1ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=rb')[2]
+    pgDic['WR_0ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=wr&noppr=true')[2]
+    pgDic['WR_1ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=wr')[2]
+    pgDic['TE_0ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=te&noppr=true')[2]
+    pgDic['TE_1ppr']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=te')[2]
+    pgDic['DST']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=def')[2]
+    pgDic['K']=pd.read_html('https://fftoolbox.scoutfantasysports.com/football/rankings/index.php?pos=k')[2]
+    pickle.dump(pgDic,open(directory+source+season+'.p','wb'))
+for key in pgDic.keys():
+    df=pgDic[key]
+    df.rename(columns={'Player':'player','Projected Pts.':'points','Pos':'pos'},inplace=True)
+    df=df[['player','pos','points']]
+    df=df.dropna(axis=0,how='any')
+    df['player']=df['player'].str.replace(r'\s\s.*','')
+    pgDic[key]=df
+if ppr == 0.0:
+    pgDic.update({'RB':pgDic['RB_0ppr'],'WR':pgDic['WR_0ppr'],'TE':pgDic['TE_0ppr']})
+elif ppr == 1.0:
+    pgDic.update({'RB':pgDic['RB_1ppr'],'WR':pgDic['WR_1ppr'],'TE':pgDic['TE_1ppr']})
+elif ppr == 0.5:
+    rbDf=pgDic['RB_0ppr'].merge(pgDic['RB_1ppr'],on=['player','pos'],how='outer')
+    rbDf['points']=rbDf[['points_x','points_y']].mean(axis=1)
+    rbDf=rbDf.drop(['points_x','points_y'],axis=1)
+    wrDf=pgDic['WR_0ppr'].merge(pgDic['WR_1ppr'],on=['player','pos'],how='outer')
+    wrDf['points']=wrDf[['points_x','points_y']].mean(axis=1)
+    wrDf=wrDf.drop(['points_x','points_y'],axis=1)
+    teDf=pgDic['TE_0ppr'].merge(pgDic['TE_1ppr'],on=['player','pos'],how='outer')
+    teDf['points']=teDf[['points_x','points_y']].mean(axis=1)
+    teDf=teDf.drop(['points_x','points_y'],axis=1)
+    pgDic.update({'RB':rbDf,'WR':wrDf,'TE':teDf})
+##Merge
+projections=pd.concat([pgDic['QB'],pgDic['RB'],pgDic['WR'],pgDic['TE'],pgDic['DST'],pgDic['K']],ignore_index=True)
+
+projections['pos']=df['pos'].str.replace('DEF','DST')
+
+    return projections
+
+def cbsProjections(directory,season,ppr=0.0):
+    source='cbs'
+    ##Scrape and pickle
+    if season != str(datetime.datetime.now().year) and os.path.exists(directory+source+season+'.p'):
+        DFs=pickle.load(open(directory+source+season+'.p',"rb"))
+    else:
+        qb=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/QB/standard/projections/'+season+'/?&print_rows=9999')[0]
+        rb=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/RB/standard/projections/'+season+'/?&print_rows=9999')[0]
+        wr=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/WR/standard/projections/'+season+'/?&print_rows=9999')[0]
+        te=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/TE/standard/projections/'+season+'/?&print_rows=9999')[0]
+        dst=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/DST/standard/projections/'+season+'/?&print_rows=9999')[0]
+        kickers=pd.read_html('https://www.cbssports.com/fantasy/football/stats/sortable/points/K/standard/projections/'+season+'/?&print_rows=9999')[0]
+        DFs=[qb,rb,wr,te,dst,kickers]
+        pickle.dump(DFs,open(directory+source+season+'.p','wb'))
+    varNames=["player","passAtt","passComp","passYds","passTds","passInt",'passRating',"rushAtt","rushYds","rushYdsPerAtt","rushTds",'recTgt',"rec","recYds","recYdsPerRec","recTds",'fumbles',"points"]
+    dstNames=kNames=["player","points"]
+    cleanedDFs=[]
+    for i in range(0,len(DFs)):
+        df=DFs[i].copy()
+        position=[po for po in ['QB','RB','WR','TE','DST','K']][i]
+        ##Add variable names
+        if position == 'DST':
+            df=df.drop([0,1]).iloc[:,[0,-1]]
+            df.columns=dstNames
+        elif position == 'K':
+            df=df.drop([0,1]).iloc[:,[0,-1]]
+            df.columns=kNames
+        else:
+            df=df[:-1].drop([0,1,2])
+            df.columns=varNames
+        df['pos']=position
+        cleanedDFs.append(df)
+        
+    ##Merge
+    projections=pd.concat(cleanedDFs,ignore_index=True) #note: reorders columns
+    
+    ##Convert variables from character strings to numeric
+    cols = projections.columns.drop(['player','pos'])
+    projections[cols] = projections[cols].apply(pd.to_numeric)
+    
+    #Player name and team
+    projections['team']=projections['player'].str.split(',').str[1].str.strip()
+    projections['player']=projections['player'].str.split(',').str[0].str.strip()
+    projections['player']=projections['player'].str.translate(str.maketrans(dict.fromkeys(string.punctuation,'')))
+    projections['player']=projections['player'].str.replace(r'\s(Sr|Jr|II|III|IV|V)$','')
+    
+    ##Check for duplicates
+    if projections[['player','pos']].duplicated().any():
+        raise Exception('Multiple players with same name and position')
+    
+    ##Reorder columns
+    projections=projections[['player','pos','points']+[c for c in projections if c not in ['player','pos','points']]]
+    
+    ##Adjust for ppr
+    projections['rec'].fillna(0.0,inplace=True)
+    projections['points']=projections['points']+projections['rec']*ppr
+    return projections
 
 def yahooProjections(directory,season,ppr=0.0):
     source='yahoo'
@@ -222,49 +343,50 @@ def espnProjections(directory,season,ppr=0.0):
     projections['points']=projections['points']-projections['rec']*(1.0-ppr)
     return projections
 
-#def pickingprosProjections(directory,season,ppr=0.0):
-source='pickingpros'
-##Scrape and pickle
-if season != str(datetime.datetime.now().year) and os.path.exists(directory+source+season+'.p'):
-    df=pickle.load(open(directory+source+season+'.p',"rb"))
-else:    
-    if season == '2017':
-        df=pd.read_html('https://web.archive.org/web/20170829211042/http://pickingpros.com/nfl/overall-fantasy-projections.php')[2]
-    elif season == str(datetime.datetime.now().year):
-        df=pd.read_html(requests.get('http://pickingpros.com/nfl/overall-fantasy-projections.php').text)[0]
-    pickle.dump(df,open(directory+source+season+'.p','wb'))
-
-##Clean and add variable names
-df.columns=df.columns.str.strip()
-df['Name']=df['Name'].str.strip()
-df=df[['Name','Rec','Fantasy']]
-df=df.rename(columns={'Name':'player','Rec':'rec','Fantasy':'points'})
-projections=df
-
-##Convert variables from character strings to numeric
-cols=projections.columns.drop('player')
-projections[cols] = projections[cols].apply(pd.to_numeric)
-
-##Player names
-projections['player']=projections['player'].str.translate(str.maketrans(dict.fromkeys(string.punctuation,'')))
-projections['player']=projections['player'].str.replace(r'\s(Sr|Jr|II|III|IV|V)$','')
-projections['player']=projections['player'].str.replace('Robert Kelley','Rob Kelley')
-
-##Check for multiple players with same name
-projections.drop_duplicates(inplace=True)
-if projections[['player']].duplicated().any():
-    raise Exception('Multiple players with same name')
-    #projections.loc[projections['player'].duplicated(),'player']
-
-##Add positions
-refDf=espnProjections(directory=directory,season=season)
-refDf=refDf[refDf['pos'].isin(['QB','RB','WR','TE'])]
-refDf=refDf.sort_values('points',ascending=False)[['player','pos']].drop_duplicates('player')
-projections=projections.merge(refDf,on='player',how='left').dropna()
-
-##Reorder columns
-projections=projections[['player','pos','points']+[c for c in projections if c not in ['player','pos','points']]]
-
-##Adjust for ppr, pickingpros default is 0 ppr
-projections['points']=projections['points']+projections['rec']*ppr
+def pickingprosProjections(directory,season,ppr=0.0):
+    source='pickingpros'
+    ##Scrape and pickle
+    if season != str(datetime.datetime.now().year) and os.path.exists(directory+source+season+'.p'):
+        df=pickle.load(open(directory+source+season+'.p',"rb"))
+    else:    
+        if season == '2017':
+            df=pd.read_html('https://web.archive.org/web/20170829211042/http://pickingpros.com/nfl/overall-fantasy-projections.php')[2]
+        elif season == str(datetime.datetime.now().year):
+            df=pd.read_html(requests.get('http://pickingpros.com/nfl/overall-fantasy-projections.php').text)[0]
+        pickle.dump(df,open(directory+source+season+'.p','wb'))
+    
+    ##Clean and add variable names
+    df.columns=df.columns.str.strip()
+    df['Name']=df['Name'].str.strip()
+    df=df[['Name','Rec','Fantasy']]
+    df=df.rename(columns={'Name':'player','Rec':'rec','Fantasy':'points'})
+    projections=df
+    
+    ##Convert variables from character strings to numeric
+    cols=projections.columns.drop('player')
+    projections[cols] = projections[cols].apply(pd.to_numeric)
+    
+    ##Player names
+    projections['player']=projections['player'].str.translate(str.maketrans(dict.fromkeys(string.punctuation,'')))
+    projections['player']=projections['player'].str.replace(r'\s(Sr|Jr|II|III|IV|V)$','')
+    projections['player']=projections['player'].str.replace('Robert Kelley','Rob Kelley')
+    projections['player']=projections['player'].str.replace('Mitch Trubisky','Mitchell Trubisky')
+    
+    ##Check for multiple players with same name
+    projections.drop_duplicates(inplace=True)
+    if projections[['player']].duplicated().any():
+        raise Exception('Multiple players with same name')
+        #projections.loc[projections['player'].duplicated(),'player']
+    
+    ##Add positions
+    refDf=espnProjections(directory=directory,season=season)
+    refDf=refDf[refDf['pos'].isin(['QB','RB','WR','TE'])]
+    refDf=refDf.sort_values('points',ascending=False)[['player','pos']].drop_duplicates('player')
+    projections=projections.merge(refDf,on='player',how='left').dropna()
+    
+    ##Reorder columns
+    projections=projections[['player','pos','points']+[c for c in projections if c not in ['player','pos','points']]]
+    
+    ##Adjust for ppr, pickingpros default is 0 ppr
+    projections['points']=projections['points']+projections['rec']*ppr
     return projections
